@@ -1,0 +1,116 @@
+---
+title: "HR_APIJET_TrajectoryAligned_StateDeviations"
+author: "Hari Rallapalli"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+# Motivation and takeaways
+
+Presented below are follow up analyses of the KCLKMEM dataset with new processing steps. Please bear in mind that these analyses only include Ownship data. There are no TAP re-route-modified data here. I will first quickly go over the parsing/analysis code workflow to generate these modified .csv files (written in Python 3.8, using pandas and shapely as primary non-default libraries) when we meet tomorrow. Then we can talk about the good and bad.
+
+## Starting with the positives
+1. I have working parsing code for Route, Trajectory, and State data. These are relatively computationally inexpensive and are ready for batch processing .dat files.
+
+2. I am able to detect changes in Route, and align Trajectory updates to each Route change event. The result of this is a "Frankenstein's monster" Trajectory file to compare to State data.
+
+3. I have working code to measure Euclidean distance deviation of State data from Trajectory data. This uses the Shapely library to quickly (and reproducibly) calculate point-to-line distances.
+
+## Now the bad
+1. The parsing code will have to be non-uniformly applied to Alaska airlines data (from NASA) and FDX data (from APIJET). There are strange, sometimes misleading, data entries in FDX Route data (the first waypoint in a block is not truly a waypoint). Trajectory data in this set start almost one minute after Route data starts. Etc. I have already scripted a few quick band-aid fixes to go between the two datasets, but this requires resolution.
+
+2. Sampling rate, start, and end times differences between the different data sources (Route, Traj, State) are likely masking some of the performance of this model. In this particular instance, a Route change was detected 4 seconds after Route data collection start. Trajectory data only started collected 55 seconds after Route collection start. In other words, it is possible we are forced to use a sub-optimal Trajectory update to do our analyses. In practice, are pilots allowed to make TAP-assisted calls to ATC within one minute after inital ascent is complete?
+
+3. There are many process limitations to deviation calculation in the current version of the code. The Shapely library operates in Euclidean geometry. Also, it is not possible to define non-circular thresholds around a waypoint line (i.e. altitude tolerance must equal lat/long tolerance in nautical miles). Also, there is a significant data sampling gap between Trajectory and State data. I guess this is to be expected, but making point-to-interpolated point distance measures like I am doing here is error-prone.
+
+## the not so ugly?
+although these plots look very similar to the ones I presented early last week, a lot of things changed "under the hood" to make plot generation and analysis more streamlined. I will focus on the deviation plot because that is where most of my efforts were directed this week. I will make smaller notes for the data vis plots. I chose to omit the statistics from this write-up because the results will essentially be the same as last week. We should discuss how to handle sampling inconsistency.
+
+```{r, warning=FALSE}
+suppressMessages({
+library(tidyverse)
+library(ggplot2)
+library(maps)
+library(multcomp)
+})
+theme_set(
+  theme_minimal()
+  )
+select <- dplyr::select
+```
+
+## Data importing
+Much more clean now because I offloaded the dirty work to Python. Much cleaner in Python anyway.
+```{r}
+ OwnshipTrajectoryFrame <- read.csv("C:\\Users\\Hari.rallapalli\\Desktop\\APIJET\\ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "Trajectory")
+```
+
+```{r}
+OwnshipStateFrame <- read.csv("C:\\Users\\Hari.rallapalli\\Desktop\\APIJET\\DEVIATIONS_AopOwnshipStateDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "State")
+```
+
+## Route plotting
+
+The key thing to note here is the "TrajID" legend. You can see each of the Trajectory update ID's that were stitched together to make comparisons. In this case, we used TrajId={1, 471}
+```{r}
+usa_map <- map_data("usa")
+flightmap <- ggplot(usa_map, aes(x = long, y = lat)) + 
+geom_polygon(aes(group=group), fill="gray75") +
+ geom_line(data = OwnshipTrajectoryFrame, aes(x = Longitude, y = Latitude, color = as.factor(TrajId)), size = 1) +
+  scale_color_brewer("TrajID", palette = "PRGn") +
+  geom_point(data = OwnshipStateFrame, aes(x = LongitudePresent, y = LatitudePresent), size = 0.2, color = "green") 
+
+flightmap
+```
+
+## Altitude deviation plots
+We should not expect much difference from before becuase the predominant source of Trajectory data is still update 1 (I think TJ called this "Trajectory 0"?)
+
+```{r}
+altitudeplot<- ggplot() +
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Altitude), color = "purple", alpha = 100, size = 1.5) +
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AltitudeBaroCorrected), color = "green", alpha = 100, size = 1.5) +
+  ylab("Altitude") +
+  scale_color_gradientn(colors = rainbow(5))
+
+altitudeplot
+```
+
+## State deviation from Trajectory
+
+This is the prize from my efforts this week. I have scripted a way to compare complete State data to "stitched" and Route-aligned Trajectory data. This method could eventually be ported to TAP data! Like I mentioned in the intro, there are a few problems
+
+1. Euclidean geometry only (assumption of 60 NM  = 1 deg)
+
+2. Large magnitude jumps between Trajectory points. Interpolation between two points is fine, but combination of Euclidean projection with point-to-point distance measurement is scary
+
+3. Magnitude only! Shapely cannot handle non-uniform deviation thresholds (called "buffer"). The buffer needs to either be circular or square. Others have tried to use non-uniform boundaries and aribtrary buffer shapes, but the code is bespoke.
+
+4. currently searching for alternative geometry methods.
+
+```{r}
+deviation_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = StateDistancesToTraj), size = 1.5) +
+  ylab("3D euclidean distance from Trajectory (nautical miles)") +
+  ylim(c(0,20))
+
+deviation_plot
+```
+
+## weight deviation
+
+Again, we should not expect too much change here. We can start to look at this more carefully after we run these scripts over the Alaska .dat files.
+
+```{r}
+weightplot<- 
+  ggplot()+
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Weight, color = as.factor(TrajId)), size = 1.5)+
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AircraftWeight), size = 1.5, color = "green") +
+  scale_color_brewer("TrajID", palette = "PuOr") +
+  ylab("Weight")
+weightplot
+```

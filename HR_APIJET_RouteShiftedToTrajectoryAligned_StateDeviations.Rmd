@@ -1,0 +1,288 @@
+---
+title: "HR_APIJET_RouteShiftedToTrajectoryAligned_StateDeviations"
+author: "Hari Rallapalli"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+# Introduction and setting the stage with a logic fault
+
+Presented below are further revised analyses of the KCLKMEM dataset. Please bear in mind that these are still only Ownship-derived data. Nothing from TAP-suggested re-route yet. PLEASE NOTE: I think I found an error in my flightplan identification logic. Currently I do the following search:
+
+1. For each Route index, make a {set} of {waypoint identifiers} (e.g. BOOYA, my favorite) and {altitudes}
+2. Compare these sets across sequential Route indicies (e.g. RouteID 1 vs RouteID 2)
+3. If there is a difference, and {waypoint identifiers} and {altitudes} from RouteID 2 are a subset of RouteID 1, then this is the same route
+4. If there is a difference, and there is no valid subset, then this is a different route.
+
+This logic works ok if there is an added waypoint, modified waypoint, or multiple waypoint reroutes. However, it will fail to detect a change if ATC drops a waypoint from the route!!! The new route will stil be a subset of the old route, but is in fact a new route. I need to update this logic to account for this case. I have an idea for how to account for this. AopRouteDataRecord has a header column called "RteChgType" which has the values "ACT_PILOT_ENTRY_EXEC" or "UNKNOWN". I make the assumption that this is actually a flag for when a route is change (i.e. Pilot is executing an entry). If true, I can us this flag in my logic to account for the route changes. Will do this for the next version of analysis scripts.
+
+Once corrected, I can pass over all of the FDX data with these analysis scripts programatically.
+
+```{r, warning=FALSE}
+suppressMessages({
+library(tidyverse)
+library(ggplot2)
+library(maps)
+library(multcomp)
+})
+theme_set(
+  theme_minimal()
+  )
+select <- dplyr::select
+```
+
+## Data importing
+
+Updated the Route alignment to Trajectory logic to only start after the first Trajectory is printed. This avoids "missing" Route changes before we can estimate behavior (I counted a 55 second lag between the first Route data block and first Trajectory block being printed). This is now sorted, but I need still need to revise the flightplan identifier logic...
+```{r}
+ OwnshipTrajectoryFrame <- read.csv("C:\\Users\\Hari.rallapalli\\Desktop\\APIJET\\ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "Trajectory")
+```
+
+```{r}
+OwnshipStateFrame <- read.csv("C:\\Users\\Hari.rallapalli\\Desktop\\APIJET\\DEVIATIONS_AopOwnshipStateDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "State")
+```
+
+## Route plotting
+Changed the colors a little because I looked at Digital Winglets UI. It's hard to match colors exactly without getting a .svg (or similar) of the map, but I did what I could.
+```{r}
+usa_map <- map_data("usa")
+flightmap <- ggplot(usa_map, aes(x = long, y = lat)) + 
+geom_polygon(aes(group=group), fill="gray75") +
+ geom_line(data = OwnshipTrajectoryFrame, aes(x = Longitude, y = Latitude, color = as.factor(TrajId)), size = 1) +
+  scale_color_brewer("TrajID", palette = "PRGn") +
+  geom_point(data = OwnshipStateFrame, aes(x = LongitudePresent, y = LatitudePresent), size = 0.2, color = "cyan") 
+
+flightmap
+```
+
+Route prediction is much improved after updating to TrajectoryID = 3, and will improve further once I correct the logic. See below for visual example of the problem with the logic. Cyan line (state) goes directly past a waypoint that is still visible in the purple line (trajectory)
+
+```{r}
+usa_map <- map_data("usa")
+flightmap_path <- ggplot()+
+ geom_line(data = OwnshipTrajectoryFrame, aes(x = Longitude, y = Latitude), size = 1, color = "purple") +
+  geom_point(data = OwnshipStateFrame, aes(x = LongitudePresent, y = LatitudePresent), size = 0.2, color = "cyan") +
+  xlim(c(-90,-82.5))+
+  ylim(c(35, 40))
+
+flightmap_path
+```
+
+
+
+## State deviation from Trajectory
+
+As we discussed last week, I am separating lateral deviation from altitude deviation (lat/long vs altitude). After separation, it is apparent that the dominant source of deviation from the overall distance trends I showed last week is lateral deviation. The magnitude of altitude deviations (0 - 161 ft) is not within 2 orders of magnitude of lat/long deviations (0 - >52,000 ft). I think this is to be expected.
+
+```{r}
+latlong_deviation_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = LatLongStateDistancesToTraj), size = 1.5) +
+  ylab("Lat/Long euclidean distance from Trajectory (nautical miles)") +
+  ylim(c(0,20))
+
+latlong_deviation_plot
+```
+
+T-test on Latitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Latitude, OwnshipStateFrame$LatitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+T-Test on Longitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Longitude, OwnshipStateFrame$LongitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+
+## Altitude deviation plots
+Unsurprisingly, TrajectoryID = 3 is not too much different in late-flight altitude predictions from TrajectoryID = 1. The rest of the flight state closely follows trajectory. I estimate a regular office building story to be 10 feet in height. This deviation "jitter" magnitude is on the order of 10 feet. Does a plane really oscillate by a story in flight??
+
+I have a feeling that this jitter is due in part to partial Nyquist sampling (1 Hz vs 1/30 Hz). I can try smoothing to correct for this, but the magnitude of the jitter is relatively small compared to the baseline altitude. Would like your input here.
+
+```{r}
+altitudeplot<- ggplot() +
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Altitude), color = "purple", alpha = 100, size = 1.5) +
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AltitudeBaroCorrected), color = "cyan", alpha = 100, size = 1.5) +
+  ylab("Altitude")
+
+altitudeplot
+```
+
+```{r}
+altitude_deviation_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = AltStateDistancesToTraj), size = 1) +
+  ylab("Altitude deviation from Trajectory (feet)") 
+
+altitude_deviation_plot
+```
+
+Zooming in a little bit to remove the crushing outlier at late timepoints. 7 seconds of state data are masked in this zoom view.
+
+```{r}
+altitude_deviation_trunc_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = AltStateDistancesToTraj), size = 1) +
+  ylab("Altitude Euclidean distance from Trajectory (feet)") +
+  ylim(c(0,20))
+
+altitude_deviation_trunc_plot
+```
+
+Altitude t-test
+
+```{r}
+t.test(OwnshipTrajectoryFrame$Altitude, OwnshipStateFrame$AltitudeBaroCorrected,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+## weight deviation
+
+I am a little confused (and disappointed?) about this, but maybe I am expecting too much from Trajectory updates ~90 seconds apart. My expectation, from the example Asha showed earlier this year, was a noticeable improvement in aircraft weight predictions after taking an update. 
+
+Perhaps this will improve further when we have more "flightplan legs" after I correct for the dropped waypoint case.
+
+```{r}
+weightplot<- 
+  ggplot()+
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Weight), size = 1.5, color = "purple")+
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AircraftWeight), size = 1.5, color = "cyan") +
+  ylab("Weight")
+weightplot
+```
+
+Weight t-test
+```{r}
+t.test(OwnshipTrajectoryFrame$Weight, OwnshipStateFrame$AircraftWeight,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+
+
+# Definition of State conformance to Trajectory
+
+Here is where I start to get a little uncomfortable. I will try to explain my reasoning for NOT DOING THIS, but I will still show what the results look like with and without thresholding.
+
+So, there are some arbitrary thresholds for an aircraft (State) to be considered conformant to planned route (Trajectory). They are listed below:
+
+Thresholds:
+
+- Latitude, longitude deviation <= 5 NM
+
+- Altitude <= 500 feet
+
+I was asked to filter the data such that State deviation from Trajectory calculations were only done where the aircraft was conforming to the trajectory (within these thresholds).
+
+## Filter State data by lateral and altitude deviations.
+
+```{r}
+filtered_OwnshipStateFrame <- OwnshipStateFrame %>%
+  filter(LatLongStateDistancesToTraj <= 5 & AltStateDistancesToTraj <= 500)
+```
+
+### Post filtration lat, long
+```{r}
+filtered_flightmap_path <- ggplot()+
+ geom_line(data = OwnshipTrajectoryFrame, aes(x = Longitude, y = Latitude), size = 1, color = "purple") +
+  geom_point(data = filtered_OwnshipStateFrame, aes(x = LongitudePresent, y = LatitudePresent), size = 0.2, color = "cyan") +
+  xlim(c(-90,-82.5))+
+  ylim(c(35, 40))
+
+filtered_flightmap_path
+```
+
+```{r}
+filtered_latlong_deviation_plot <- ggplot(data = filtered_OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_point(aes(x = Timestamp, y = LatLongStateDistancesToTraj), size = 1.5) +
+  ylab("Lat/Long euclidean distance from Trajectory (nautical miles)") +
+  ylim(c(0,20))
+
+filtered_latlong_deviation_plot
+```
+
+These tests will be flawed because I am comparing all Trajectory data to the filtered State data. Will need to revise this workflow to align Trajectory and State by Timestamp and then do filtration.
+
+
+T-test on Latitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Latitude, filtered_OwnshipStateFrame$LatitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+T-Test on Longitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Longitude, filtered_OwnshipStateFrame$LongitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+### Post-filtration altitude
+
+```{r}
+altitudeplot<- ggplot() +
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Altitude), color = "purple", alpha = 100, size = 1.5) +
+  geom_point(data = filtered_OwnshipStateFrame, aes(x = Timestamp, y = AltitudeBaroCorrected), color = "cyan", alpha = 100, size = 1.5) +
+  ylab("Altitude")
+
+altitudeplot
+```
+
+```{r}
+filtered_altitude_deviation_trunc_plot <- ggplot(data = filtered_OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_point(aes(x = Timestamp, y = AltStateDistancesToTraj), size = 1) +
+  ylab("Altitude Euclidean distance from Trajectory (feet)") +
+  ylim(c(0,20))
+
+filtered_altitude_deviation_trunc_plot
+```
+
+```{r}
+t.test(OwnshipTrajectoryFrame$Altitude, filtered_OwnshipStateFrame$AltitudeBaroCorrected,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+### Post-filtration weight deviation
+
+```{r}
+filtered_weightplot<- 
+  ggplot()+
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Weight), size = 1.5, color = "purple")+
+  geom_point(data = filtered_OwnshipStateFrame, aes(x = Timestamp, y = AircraftWeight), size = 1.5, color = "cyan") +
+  ylab("Weight")
+filtered_weightplot
+```
+
+
+Weight t-test
+```{r}
+t.test(OwnshipTrajectoryFrame$Weight, filtered_OwnshipStateFrame$AircraftWeight,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+## an opinion on this
+
+In my naive opinion, this is double correcting for changes in Route. If I am a pilot and ATC tells me to change Route, this workflow will detect that change and take a Trajectory update to account for it. The same thing will be true for TAP-motivated re-routes (at least for the first one). If I deviate from the planned route for any other reason, that should be considered normal flight. Restricting the definition of "normal" is overcorrection.
+
+ALSO, this correction doesn't even really make the prediction look any better. We only keep `r nrow(filtered_OwnshipStateFrame)/nrow(OwnshipStateFrame)*100` % of the data after thresholding. Visually, we don't gain very much in terms of apparent model performance. We also lose interpretability of our t-tests!
+
+I propose revisiting the subject after I correct the flightplan identifier logic, reporting the percentage of conformant datapoints, but not filtering out nonconforming points.
+
