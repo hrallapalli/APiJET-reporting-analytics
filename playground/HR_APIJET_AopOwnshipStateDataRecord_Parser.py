@@ -6,9 +6,9 @@ import pandas as pd
 import io
 import sys
 
-def StateParser():
+def StateParser(pathToFile):
 
-    pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipStateDataRecord.csv'
+    # pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipStateDataRecord.csv'
     f = open(pathToFile)
     s = io.StringIO()
     header_info = None
@@ -31,4 +31,4 @@ def StateParser():
     return(df)
 
 if __name__ == 'main':
-    StateDf = StateParser()
+    StateDf = StateParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipStateDataRecord.csv')
