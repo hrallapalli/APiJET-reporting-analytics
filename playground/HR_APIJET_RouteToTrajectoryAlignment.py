@@ -9,7 +9,7 @@ import pandas as pd
 import HR_APIJET_AopRouteDataRecord_Parser as rp
 import HR_APIJET_AopTrajectoryDataRecord_Parser as tp
 
-def AlignedTraj():
+def AlignedTraj(pathToRoute, pathToTraj):
         
     def TakeClosestGreater(number, collection):
         closest_greater_value = collection[collection > number].min()  
@@ -30,8 +30,8 @@ def AlignedTraj():
         return diff_list
     
     
-    Route_df = rp.RouteParser()
-    Traj_df = tp.TrajParser()
+    Route_df = rp.RouteParser(pathToRoute)
+    Traj_df = tp.TrajParser(pathToTraj)
     
     Route_SimTime_Check = []
     
@@ -81,4 +81,4 @@ def AlignedTraj():
     return stitch_Traj_df
 
 if __name__ == '__main__':
-    AlignedTraj_df = AlignedTraj()
+    AlignedTraj_df = AlignedTraj(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv',r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv')

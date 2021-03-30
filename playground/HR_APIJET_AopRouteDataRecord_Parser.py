@@ -8,9 +8,9 @@ import pandas as pd
 import io
 import sys
 
-def RouteParser():
+def RouteParser(pathToFile):
     
-    pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv'
+    # pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv'
     f = open(pathToFile)
     s = io.StringIO()
     header_info = None
@@ -201,4 +201,4 @@ def RouteParser():
     return(df)
 
 if __name__ == '__main__':
-    RouteDf = RouteParser()
+    RouteDf = RouteParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv')
