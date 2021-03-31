@@ -8,9 +8,9 @@ import pandas as pd
 import io
 import sys
 
-def RouteParser():
+def RouteParser(pathToFile):
     
-    pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv'
+    # pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv'
     f = open(pathToFile)
     s = io.StringIO()
     header_info = None
@@ -42,8 +42,82 @@ def RouteParser():
     
     
     df = pd.read_csv(s,  names=colnames)
-    
-    
+            
+            
+            # I will set a flag to detect if this is APIJET data or not. This will also handle the "nominal" case in Brian's logic.
+            # "At any given flight plan read at time, t, I first check if the second waypoint of the state is equal to the second waypoint read at t."
+            # "If they are equal yet the first waypoints differ, then this is the nominal case."
+            
+            # test_1 = df[df["Index"]==1]
+            # test_2 = df[df["Index"]==2]
+            # is_apijet_data = 0
+            
+            # if test_1["ACMS"].iloc[0] != test_2["ACMS"].iloc[0]:
+            #     is_apijet_data = 1
+            
+            # # Setting up empty variables to fill/update during the search through Route
+            
+            # current_waypoints = []
+            # current_altitude = []
+            # flightplan_identifer = 0
+            
+                
+            # for Index in df["Index"].unique():
+            #     is_IndexNum = df["Index"]==Index
+            #     df_IndexNum = df[is_IndexNum]
+                
+            #     if is_apijet_data == 1:
+            #         first = 1
+            #         second = 2
+            #     else:
+            #         first = 0
+            #         second = 1
+            
+            #     # Applying Brian's logic for route change detection here:
+            #     # "I assessed the first three waypoints of any given flight plan read at time, t, against first three waypoints ever read, t = 0, (serving as the state of the script)."
+                
+            #     ##initialize##
+            #     if len(current_waypoints) == 0 & len(current_altitude) == 0:
+            #         current_waypoints = df_IndexNum["ACMS"]
+            #         current_latitude = df_IndexNum["Latitude"]
+            #         current_longitude = df_IndexNum["Longitude"]
+            #         current_altitude = df_IndexNum["CruiseAltitude"]
+            #         df.loc[is_IndexNum,"is_apijet_data"] = is_apijet_data
+            #         df.loc[is_IndexNum,"flightplan_identifer"] = flightplan_identifer
+            #         continue
+                
+            #     test_waypoints = df_IndexNum["ACMS"]
+            #     test_latitude = df_IndexNum["Latitude"]
+            #     test_longitude = df_IndexNum["Longitude"]
+            #     test_altitude  = df_IndexNum["CruiseAltitude"]
+                
+            #     # A bit of rearrangement of his logic to detect APIJET data vs NASA data.
+            #     # If the first waypoints are equivalent, I assume that the route is still the same
+                
+            #     if test_waypoints.iloc[first] == current_waypoints.iloc[first]:
+            #             df.loc[is_IndexNum,"is_apijet_data"] = is_apijet_data
+            #             df.loc[is_IndexNum,"flightplan_identifer"] = flightplan_identifer
+                
+            #     # Brian - "then I check if the first waypoint read at time, t, is equal to (or in some incredibly close proximity) the state's second waypoint indicating that the ownship is flying past the state's second waypoint. At this point, I update the state to the waypoints read at time t. "
+            #     elif test_waypoints.iloc[first] == current_waypoints.iloc[second]:
+            #             current_waypoints = test_waypoints
+            #             current_latitude = test_latitude
+            #             current_longitude = test_longitude
+            #             current_altitude = test_altitude
+            #             df.loc[is_IndexNum,"is_apijet_data"] = is_apijet_data
+            #             df.loc[is_IndexNum,"flightplan_identifer"] = flightplan_identifer
+            #     # Brian - "Finally if the check for the nominal case or the update case are not met, you can assume there's been an update to the flight plan such as a direct to."
+            #     else:
+            #         flightplan_identifer = flightplan_identifer+1
+            #         current_waypoints = test_waypoints
+            #         current_latitude = test_latitude
+            #         current_longitude = test_longitude
+            #         current_altitude = test_altitude
+            #         df.loc[is_IndexNum,"is_apijet_data"] = is_apijet_data
+            #         df.loc[is_IndexNum,"flightplan_identifer"] = flightplan_identifer
+                    
+                
+            
     WAYPOINT_IDENTIFIER_ITERATOR = 0
     FLIGHTPLAN_START_TIME = df.loc[0,"SimTime"]
     
@@ -122,9 +196,9 @@ def RouteParser():
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_WAYPOINT_IDENTIFIER"] = APIJET_WAYPOINT_IDENTIFIER_ITERATOR
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_START_TIME"] = APIJET_FLIGHTPLAN_START_TIME
                 
-    
+
                 
     return(df)
 
 if __name__ == '__main__':
-    RouteDf = RouteParser()
+    RouteDf = RouteParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv')

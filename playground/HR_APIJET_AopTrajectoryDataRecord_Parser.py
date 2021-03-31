@@ -6,9 +6,9 @@ import pandas as pd
 import io
 import sys
 
-def TrajParser():
+def TrajParser(pathToFile):
 
-    pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv'
+    # pathToFile = r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv'
     f = open(pathToFile)
     s = io.StringIO()
     header_info = None
@@ -39,4 +39,4 @@ def TrajParser():
     return(df)
 
 if __name__ == '__main__':
-    TrajDf = TrajParser()
+    TrajDf = TrajParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv')
