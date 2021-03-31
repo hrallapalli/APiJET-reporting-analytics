@@ -5,11 +5,12 @@ Created on Thu Mar  4 00:19:43 2021
 @author: Hari Rallapalli
 """
 import pandas as pd
+import os
 
 import HR_APIJET_AopRouteDataRecord_Parser as rp
 import HR_APIJET_AopTrajectoryDataRecord_Parser as tp
 
-def AlignedTraj(pathToRoute, pathToTraj):
+def AlignedTraj(pathToRoute, pathToTraj, outputPath):
         
     def TakeClosestGreater(number, collection):
         closest_greater_value = collection[collection > number].min()  
@@ -76,7 +77,7 @@ def AlignedTraj(pathToRoute, pathToTraj):
         tmp_Traj_df= filtered_Traj_df[(filtered_Traj_df['Timestamp'] >= Traj_Closest_SimTime[n]) & (filtered_Traj_df['Timestamp'] <= Traj_Furthest_SimTime[n])]
         stitch_Traj_df = pd.concat([stitch_Traj_df,tmp_Traj_df]).drop_duplicates().reset_index(drop=True)
     
-    stitch_Traj_df.to_csv(r'ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv')
+    stitch_Traj_df.to_csv(os.path.join(outputPath,'ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv'))
     
     return stitch_Traj_df
 

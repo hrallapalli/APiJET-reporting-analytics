@@ -4,14 +4,17 @@
 """
 from shapely.geometry import Point, Polygon, LineString
 import pandas as pd
+import os
 
 import HR_APIJET_AopOwnshipStateDataRecord_Parser as sp
 import HR_APIJET_RouteToTrajectoryAlignment as tp
 
-def RouteToStateDeviations(pathToStateFile, pathToAlignedTraj):
+def RouteToStateDeviations(pathToStateFile, pathToAlignedTraj,outputPath):
 
     State_df = sp.StateParser(pathToStateFile)
-    Traj_df = tp.AlignedTraj(pathToAlignedTraj)
+    # Traj_df = tp.AlignedTraj(pathToRouteFile,pathToAlignedTraj,outputPath)
+    Traj_df = pd.read_csv(pathToAlignedTraj)
+    
     
     waypoints = []
     altitudes = []
@@ -37,7 +40,7 @@ def RouteToStateDeviations(pathToStateFile, pathToAlignedTraj):
     State_df['LatLongStateDistancesToTraj'] = latlong_distances
     State_df['AltStateDistancesToTraj'] = altitude_distances
     
-    State_df.to_csv(r'DEVIATIONS_AopOwnshipStateDataRecord.csv')
+    State_df.to_csv(os.path.join(outputPath,'DEVIATIONS_AopOwnshipStateDataRecord.csv'))
 
 if __name__ == '__main__':
     RouteToStateDeviations(r'AopOwnshipStateDataRecord.csv',r'ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv')
