@@ -1,0 +1,124 @@
+---
+title: "APIJET_flight_deviations_analysis"
+author: "Hari Rallapalli"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Import data from local folder
+
+```{r}
+dir = getwd()
+setwd(dir)
+```
+
+```{r}
+ OwnshipTrajectoryFrame <- read.csv("ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "Trajectory")
+```
+
+```{r}
+OwnshipStateFrame <- read.csv("DEVIATIONS_AopOwnshipStateDataRecord.csv", header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(csvsource = "State")
+```
+
+# State and Trajectory plots
+
+
+## Flightplan/Flightpath
+
+```{r}
+usa_map <- map_data("usa")
+flightmap <- ggplot(usa_map, aes(x = long, y = lat)) + 
+geom_polygon(aes(group=group), fill="gray75") +
+ geom_line(data = OwnshipTrajectoryFrame, aes(x = Longitude, y = Latitude, color = as.factor(TrajId)), size = 1) +
+  scale_color_brewer("TrajID", palette = "PRGn") +
+  geom_point(data = OwnshipStateFrame, aes(x = LongitudePresent, y = LatitudePresent), size = 0.2, color = "cyan") 
+
+flightmap
+```
+
+## Altitude
+
+```{r}
+altitudeplot<- ggplot() +
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Altitude), color = "purple", alpha = 100, size = 1.5) +
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AltitudeBaroCorrected), color = "cyan", alpha = 100, size = 1.5) +
+  ylab("Altitude")
+
+altitudeplot
+```
+
+# Deviations
+
+## State deviation from Trajectory
+
+```{r}
+latlong_deviation_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = LatLongStateDistancesToTraj), size = 1.5) +
+  ylab("Lat/Long euclidean distance from Trajectory (nautical miles)") +
+  ylim(c(0,20))
+
+latlong_deviation_plot
+```
+
+T-test on Latitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Latitude, OwnshipStateFrame$LatitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+T-Test on Longitudes
+```{r}
+t.test(OwnshipTrajectoryFrame$Longitude, OwnshipStateFrame$LongitudePresent,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+## Altitude deviation from Trajectory
+
+```{r}
+altitude_deviation_trunc_plot <- ggplot(data = OwnshipStateFrame, aes(x = time, y = deviation)) +
+  geom_line(aes(x = Timestamp, y = AltStateDistancesToTraj), size = 1) +
+  ylab("Altitude Euclidean distance from Trajectory (feet)") +
+  ylim(c(0,20))
+
+altitude_deviation_trunc_plot
+```
+
+Altitude t-test
+
+```{r}
+t.test(OwnshipTrajectoryFrame$Altitude, OwnshipStateFrame$AltitudeBaroCorrected,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
+
+## Weight deviation from Trajectory
+
+```{r}
+weightplot<- 
+  ggplot()+
+  geom_line(data = OwnshipTrajectoryFrame, aes(x = Timestamp, y = Weight), size = 1.5, color = "purple")+
+  geom_line(data = OwnshipStateFrame, aes(x = Timestamp, y = AircraftWeight), size = 1.5, color = "cyan") +
+  ylab("Weight")
+weightplot
+```
+
+```{r}
+t.test(OwnshipTrajectoryFrame$Weight, OwnshipStateFrame$AircraftWeight,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
+```
