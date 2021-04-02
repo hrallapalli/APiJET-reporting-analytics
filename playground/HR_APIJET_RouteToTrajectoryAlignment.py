@@ -46,7 +46,7 @@ def AlignedTraj(pathToRoute, pathToTraj, outputPath):
     #########
     
     Route_First_Traj_ind = Route_df["SimTime"] > Traj_First_Simtime
-    Route_df = Route_df = Route_df[Route_First_Traj_ind]
+    Route_df = Route_df[Route_First_Traj_ind]
     
     #########
     # End of filtering
@@ -58,10 +58,14 @@ def AlignedTraj(pathToRoute, pathToTraj, outputPath):
         Route_df_FlightPlan = Route_df[is_FlightPlan]
         
         Route_SimTime_Check.append(Route_df_FlightPlan["SimTime"].iloc[0])
-        
-        Traj_Closest_SimTime.append(TakeClosestGreater(Route_SimTime_Check[n],Traj_df["SimTime"]))
-        Traj_Closest = Traj_df[Traj_df["SimTime"]==Traj_Closest_SimTime[n]]
-        Traj_Closest_ID.append(Traj_Closest["TrajId"].iloc[0])
+        try:
+            Traj_Closest_SimTime.append(TakeClosestGreater(Route_SimTime_Check[n],Traj_df["SimTime"]))
+            Traj_Closest = Traj_df[Traj_df["SimTime"]==Traj_Closest_SimTime[n]]
+            Traj_Closest_ID.append(Traj_Closest["TrajId"].iloc[0])
+        except:
+            Traj_Closest_SimTime = Traj_Closest_SimTime[:-1]
+            print('Route change occurs after Trajectory stops printing!')
+            continue
     
     Traj_Last_SimTime = Traj_df["SimTime"].iloc[-1]
     Traj_Difflist = TrajectoryLifetime(Traj_Closest_SimTime,Traj_Last_SimTime)

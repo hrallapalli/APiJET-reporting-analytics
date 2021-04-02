@@ -8,11 +8,20 @@ import shutil
 import HR_APIJET_RouteToTrajectoryAlignment as r2ta
 import HR_APIJET_Aligned_TrajToState_Deviation as t2sd
 
-rootdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\loopingtest'
+# rootdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\loopingtest'
+
+rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_run_20210315'
 rscriptdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\APIJET_flight_deviations_analysis.Rmd'
 rknitdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\knit_analysis.R'
 
 for flight_folder in os.listdir(rootdir):
+    if flight_folder.startswith('.'):
+        continue
+    elif flight_folder == 'Temp':
+        continue
+    elif flight_folder.endswith('.xlsx'):
+        continue
+    
     print(('Current flight:', flight_folder))
     out_dir_path = os.path.join(rootdir,flight_folder,'analysis')
     
@@ -23,9 +32,9 @@ for flight_folder in os.listdir(rootdir):
         print('analysis output path already exists')
     
     try:
-        pathToRoute = os.path.join(rootdir,flight_folder,(flight_folder,'_AopRouteDataRecord.csv'))
-        pathToTraj  = os.path.join(rootdir,flight_folder,(flight_folder,'_AopOwnshipTrajectoryDataRecord.csv'))
-        pathToState = os.path.join(rootdir,flight_folder,(flight_folder,'_AopOwnshipStateDataRecord.csv'))
+        pathToRoute = os.path.join(rootdir,flight_folder,(flight_folder + '_AopRouteDataRecord.csv'))
+        pathToTraj  = os.path.join(rootdir,flight_folder,(flight_folder +'_AopOwnshipTrajectoryDataRecord.csv'))
+        pathToState = os.path.join(rootdir,flight_folder,(flight_folder +'_AopOwnshipStateDataRecord.csv'))
     except:
         print('Incorrect formatting of input .csv filenames or unsuitable root directory')
     
