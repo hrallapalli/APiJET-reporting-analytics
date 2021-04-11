@@ -35,6 +35,7 @@ route_wall_time = []
 route_data = []
 route_waypoints = []
 route_positions = []
+route_altitude = []
 route_first_position = []
 
 state_wall_time = []
@@ -71,6 +72,7 @@ for child in children:
         
         route_body = re.search(r'<ROUTE_DATA>.+?</ROUTE_DATA>',body).group(0)
         route_data.append(route_body)
+        route_altitude_data = re.search('<CRUISE_ALTITUDE.+?>', route_body).group(0)
         route_waypoints_data = re.findall('<ROUTE_WAYPOINT.+?>', route_body)
         route_positions_data = re.findall('<POSITION.+?>', route_body)
         
@@ -81,13 +83,14 @@ for child in children:
         
         route_first_position_data = route_positions_data[0]
         route_first_position_data = re.findall("\d+\.\d+",route_first_position_data)
+        route_altitude.append(re.findall("\d+",route_altitude_data)[0])
         
         route_waypoints.append(route_waypoints_data)
         route_positions.append(unlist(route_positions_data))
         route_first_position.append(route_first_position_data)
 
 s = {"UniqueID":UniqueID, "Wall_Time":state_wall_time, "State_Data":state_data, "State_Position":state_positions}
-r = {"UniqueID":UniqueID, "Wall_Time":route_wall_time,"Route_Waypoints":route_waypoints,"Route_Positions":route_positions, "Route_First_Position":route_first_position}
+r = {"UniqueID":UniqueID, "Wall_Time":route_wall_time,"Route_Waypoints":route_waypoints,"Route_Positions":route_positions, "Route_First_Position":route_first_position, "Route_Altitude":route_altitude}
 
 state_frame = pd.DataFrame(s)
 route_frame = pd.DataFrame(r)
@@ -96,6 +99,7 @@ route_filtered = route_frame.drop_duplicates(subset = ["Route_Positions"])
 
 closest_state_position = []
 waypoints_check = []
+altitude_check = []
 
 for n in range(len(route_filtered)):
     
@@ -109,18 +113,20 @@ for n in range(len(route_filtered)):
         cur_wpts = route_filtered["Route_Waypoints"].iloc[n]
         nex_wpts = route_filtered["Route_Waypoints"].iloc[n+1]
         waypoints_check.append(cur_wpts[1:] == nex_wpts)
+        
+        cur_alt = route_filtered["Route_Altitude"].iloc[n]
+        nex_alt = route_filtered["Route_Altitude"].iloc[n+1]
+        altitude_check.append(cur_alt == nex_alt)
+        
     except:
         print("end of flightplan")
         waypoints_check.append(True)
+        altitude_check.append(True)
         continue
     
-
-    
-    
-    
-    
 route_filtered["Closest_State_Position"] = closest_state_position
-route_filtered["Waypoints_Differences"] = waypoints_check
+route_filtered["Waypoints_Same"] = waypoints_check
+route_filtered["Altitude_Same"] = altitude_check
    
 distances = []
 for n in range(len(route_filtered)):
@@ -141,7 +147,6 @@ for n in range(len(route_filtered)):
     distances.append(distance)
     
    
-
 route_filtered["Route-to-State_Distance"] = distances
 
 changed_flightplan = []
@@ -149,7 +154,7 @@ waypoint_hit_threshold = 50
 
 for n in range(len(route_filtered)):
     
-    if (route_filtered["Waypoints_Differences"].iloc[n] == True and route_filtered["Route-to-State_Distance"].iloc[n] <= waypoint_hit_threshold):
+    if (route_filtered["Waypoints_Same"].iloc[n] == True and route_filtered["Altitude_Same"].iloc[n] == True and route_filtered["Route-to-State_Distance"].iloc[n] <= waypoint_hit_threshold):
         changed_flightplan.append(False)
     else:
         changed_flightplan.append(True)
