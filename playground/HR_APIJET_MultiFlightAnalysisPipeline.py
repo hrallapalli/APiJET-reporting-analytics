@@ -2,7 +2,8 @@
 
 import os
 import shutil
-# import subprocess
+import subprocess
+import datetime as dt
 # import rpy2.robjects as robjects
 
 import HR_APIJET_RouteToTrajectoryAlignment as r2ta
@@ -14,6 +15,9 @@ rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finish
 rscriptdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\APIJET_flight_deviations_analysis.Rmd'
 rknitdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\knit_analysis.R'
 
+dt = dt.datetime.now()
+ts = str(round(dt.timestamp()*1000))
+
 for flight_folder in os.listdir(rootdir):
     if flight_folder.startswith('.'):
         continue
@@ -23,13 +27,15 @@ for flight_folder in os.listdir(rootdir):
         continue
     
     print(('Current flight:', flight_folder))
-    out_dir_path = os.path.join(rootdir,flight_folder,'analysis')
+    out_dir_path = os.path.join(rootdir,flight_folder,'analysis_' + ts)
     
     if not os.path.exists(out_dir_path):
         os.makedirs(out_dir_path)
         print('analysis output path created')
     else:
-        print('analysis output path already exists')
+        shutil.rmtree(out_dir_path)
+        os.makedirs(out_dir_path)
+        print('analysis output path already exists! Overwriting!')
     
     try:
         pathToRoute = os.path.join(rootdir,flight_folder,(flight_folder + '_AopRouteDataRecord.csv'))
@@ -49,4 +55,4 @@ for flight_folder in os.listdir(rootdir):
     # os.chdir(out_dir_path)
     # robjects.r.source("knit_analysis.R")
 
-    # subprocess.call([r'C:\Users\Hari.rallapalli\Anaconda3\envs\rstudio\lib\R\bin\Rscript', '--vanilla','knit_analysis.R'], shell=True)
+    subprocess.call([r'C:\Users\Hari.rallapalli\Anaconda3\envs\rstudio\lib\R\bin\Rscript', '--vanilla','knit_analysis.R'], shell=True)

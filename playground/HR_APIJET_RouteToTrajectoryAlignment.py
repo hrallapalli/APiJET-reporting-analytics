@@ -30,7 +30,44 @@ def AlignedTraj(pathToRoute, pathToTraj, outputPath):
         diff_list.append(lasttime-timepoints[-1])
         return diff_list
     
+    # Route_df = pd.read_csv(pathToRoute)
+    # Traj_df = tp.TrajParser(pathToTraj)
     
+    # Route_WallTime_Check = []
+    
+    # Traj_First_WallTime = Traj_df["WallTime"].iloc[0]
+    # Traj_Closest_ID = []
+    # Traj_Closest_WallTime = []
+    
+    # #########
+    # # Filtering Route data printed before first Trajectory update (by SimTime) 
+    # #########
+    
+    # Route_First_Traj_ind = Route_df["Wall_Time"] > Traj_First_WallTime
+    # Route_df = Route_df[Route_First_Traj_ind]
+    
+    # #########
+    # # End of filtering
+    # #########
+    
+    # stitch_Traj_df = pd.DataFrame(columns = Traj_df.columns)
+    
+    # for n in range(len(Route_df)):
+        
+    #     try:
+    #         Start_Walltime = Route_df["Wall_Time"].iloc[n]
+    #         Finish_Walltime = Route_df["Wall_Time"].iloc[n]
+    #     except:
+    #         Start_Walltime = Route_df["Wall_Time"].iloc[n]
+    #         Finish_Walltime = 2147483647 # This is the max 32-bit number. Will need to update when 64-bit timestamps are implemented.
+        
+    #     closest_WallTime = TakeClosestGreater(Start_Walltime, Traj_df["WallTime"])
+    #     filtered_Traj_df = Traj_df[Traj_df["WallTime"] == closest_WallTime]
+            
+    #     tmp_Traj_df = filtered_Traj_df[(filtered_Traj_df['Timestamp'] >= closest_WallTime) & (filtered_Traj_df['Timestamp'] <= Finish_Walltime)]
+    #     stitch_Traj_df = pd.concat([stitch_Traj_df,tmp_Traj_df]).drop_duplicates().reset_index(drop=True)
+        
+        
     Route_df = rp.RouteParser(pathToRoute)
     Traj_df = tp.TrajParser(pathToTraj)
     
@@ -86,4 +123,4 @@ def AlignedTraj(pathToRoute, pathToTraj, outputPath):
     return stitch_Traj_df
 
 if __name__ == '__main__':
-    AlignedTraj_df = AlignedTraj(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv',r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv')
+    AlignedTraj_df = AlignedTraj(r'C:\Users\Hari.rallapalli\Desktop\APIJET\test_flight_JFK-MEM\flightplan_changes.csv',r'C:\Users\Hari.rallapalli\Desktop\APIJET\test_flight_JFK-MEM\MEM_JFK_1431_7AprAopOwnshipTrajectoryDataRecord.csv',r'C:\Users\Hari.rallapalli\Desktop\APIJET\test_flight_JFK-MEM\analysis')

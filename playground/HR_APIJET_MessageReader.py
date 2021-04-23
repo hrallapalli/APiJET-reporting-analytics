@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 import re
 import pandas as pd
 import math
+import os
 
 def unlist(lis):
     unlis = lis[0]
@@ -18,9 +19,15 @@ def TakeClosestGreater(number, collection):
     return closest_greater_value
 
 # filename = r'C:\Users\Hari.rallapalli\Desktop\APIJET\TAPEngine_MessagingLog_L_APIJET02_asteroid_20210303_165510.xml'
-filename = r'C:\Users\Hari.rallapalli\Desktop\APIJET\TAPEngine_MessagingLog_L_APIJET02_asteroid_20210407_083056.xml'
+# filename = r'C:\Users\Hari.rallapalli\Desktop\APIJET\TAPEngine_MessagingLog_L_APIJET02_asteroid_20210407_083056.xml'
 
+base_path = r'C:\Users\Hari.rallapalli\Desktop\APIJET\test_flight_JFK-MEM'
 
+for file in os.listdir(base_path):
+    if file.endswith(".xml"):
+        filename = os.path.join(base_path,file)
+        
+        
 with open(filename,'r', encoding='utf-8') as myFile:
     myFile=myFile.read()
     if "#" in myFile:
@@ -130,7 +137,7 @@ route_filtered["Altitude_Same"] = altitude_check
    
 distances = []
 for n in range(len(route_filtered)):
-    ### need to compute distances from next closest State point to waypoint
+    ### need to compute distances from next closest State point to Route waypoint
     
     p1 = route_filtered["Route_First_Position"].iloc[n]
     p2 = route_filtered["Closest_State_Position"].iloc[n]
@@ -160,3 +167,7 @@ for n in range(len(route_filtered)):
         changed_flightplan.append(True)
         
 route_filtered["Changed_Flightplan"] = changed_flightplan
+
+flightplan_changes = route_filtered[route_filtered["Changed_Flightplan"]]
+
+flightplan_changes.to_csv(os.path.join(base_path,'flightplan_changes.csv'))

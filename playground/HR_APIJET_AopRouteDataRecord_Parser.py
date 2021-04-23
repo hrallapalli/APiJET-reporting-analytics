@@ -136,31 +136,44 @@ def RouteParser(pathToFile):
         set_alt = set(df_IndexNum["CruiseAltitude"])
         set_waypoint = set(df_IndexNum["ACMS"])
         
+        cur_waypoints = df_IndexNum["ACMS"]
+        
         # set_next_lat = set(df_next_IndexNum["Latitude"])
         # set_next_long = set(df_next_IndexNum["Longitude"])
         set_next_alt = set(df_next_IndexNum["CruiseAltitude"])
         set_next_waypoint = set(df_next_IndexNum["ACMS"])
+        
+        nex_waypoints = df_next_IndexNum["ACMS"]
     
         # check_lat = set_lat - set_next_lat
         # check_long = set_long - set_next_long
         check_alt = set_alt - set_next_alt
         check_waypoint = set_waypoint - set_next_waypoint
         
+        same_waypoints = cur_waypoints.to_list()==nex_waypoints.to_list()
+        past_waypoints = cur_waypoints[1:].to_list()==nex_waypoints.to_list()
+        
         apijet_set_alt = set(df_IndexNum[1:]["CruiseAltitude"])
         apijet_set_next_alt = set(df_next_IndexNum[1:]["CruiseAltitude"])
         
         apijet_set_waypoint = set(df_IndexNum[1:]["ACMS"])
         apijet_set_next_waypoint = set(df_next_IndexNum[1:]["ACMS"])
-    
+        
+        apijet_cur_waypoints = df_IndexNum[1:]["ACMS"]
+        apijet_nex_waypoints = df_next_IndexNum[1:]["ACMS"]
+        
         apijet_check_alt = apijet_set_alt - apijet_set_next_alt
         apijet_check_waypoint = apijet_set_waypoint - apijet_set_next_waypoint
+        
+        apijet_same_waypoints = apijet_cur_waypoints.to_list()==apijet_nex_waypoints.to_list()
+        apijet_past_waypoints = apijet_cur_waypoints[1:].to_list()==apijet_nex_waypoints.to_list()
                 
-        if len(check_waypoint)==0 and len(check_alt)==0:
+        if len(check_waypoint)==0 and len(check_alt)==0 and same_waypoints==True:
                 df.loc[is_IndexNum,"FLIGHTPLAN_WAYPOINT_IDENTIFIER"] = WAYPOINT_IDENTIFIER_ITERATOR
                 df.loc[is_IndexNum,"FLIGHTPLAN_START_TIME"] = FLIGHTPLAN_START_TIME
                 
         else:
-            if set_next_waypoint.issubset(set_waypoint)==1 and len(check_alt)==0:
+            if set_next_waypoint.issubset(set_waypoint)==1 and len(check_alt)==0 and past_waypoints==True:
                 df.loc[is_IndexNum,"FLIGHTPLAN_WAYPOINT_IDENTIFIER"] = WAYPOINT_IDENTIFIER_ITERATOR
                 df.loc[is_IndexNum,"FLIGHTPLAN_START_TIME"] = FLIGHTPLAN_START_TIME
                 
@@ -176,12 +189,12 @@ def RouteParser(pathToFile):
                 df.loc[is_IndexNum,"FLIGHTPLAN_START_TIME"] = FLIGHTPLAN_START_TIME
                 
                 
-        if len(apijet_check_waypoint)==0 and len(apijet_check_alt)==0:
+        if len(apijet_check_waypoint)==0 and len(apijet_check_alt)==0 and apijet_same_waypoints==True:
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_WAYPOINT_IDENTIFIER"] = APIJET_WAYPOINT_IDENTIFIER_ITERATOR
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_START_TIME"] = APIJET_FLIGHTPLAN_START_TIME
                 
         else:
-            if apijet_set_next_waypoint.issubset(apijet_set_waypoint)==1 and len(apijet_check_alt)==0:
+            if apijet_set_next_waypoint.issubset(apijet_set_waypoint)==1 and len(apijet_check_alt)==0 and apijet_past_waypoints==True:
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_WAYPOINT_IDENTIFIER"] = APIJET_WAYPOINT_IDENTIFIER_ITERATOR
                 df.loc[is_IndexNum,"APIJET_FLIGHTPLAN_START_TIME"] = APIJET_FLIGHTPLAN_START_TIME
                 
@@ -201,4 +214,5 @@ def RouteParser(pathToFile):
     return(df)
 
 if __name__ == '__main__':
-    RouteDf = RouteParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv')
+    # RouteDf = RouteParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopRouteDataRecord.csv')
+    RouteDf = RouteParser(r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_run_20210315\Flight_Run_3\Flight_Run_3_AopRouteDataRecord.csv')
