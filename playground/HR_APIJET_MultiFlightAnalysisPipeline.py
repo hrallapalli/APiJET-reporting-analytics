@@ -10,10 +10,11 @@ import HR_APIJET_RouteToTrajectoryAlignment as r2ta
 import HR_APIJET_Aligned_TrajToState_Deviation as t2sd
 
 # rootdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\loopingtest'
+# rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_run_20210315'
 
-rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_run_20210315'
-rscriptdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\APIJET_flight_deviations_analysis.Rmd'
-rknitdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\knit_analysis.R'
+rootdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210423_test'
+rscriptdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\APIJET_flight_deviations_analysis.Rmd'
+rknitdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\knit_analysis.R'
 
 dt = dt.datetime.now()
 ts = str(round(dt.timestamp()*1000))
