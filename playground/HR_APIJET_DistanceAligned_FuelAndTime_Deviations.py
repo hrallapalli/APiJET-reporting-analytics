@@ -59,19 +59,26 @@ def FuelAndTimeDeviations(pathToStateFile, pathToAlignedTraj,outputPath):
     
     xs = [point.x for point in waypoints]
     ys = [point.y for point in waypoints]
+    
+    x = [point.x for point in nearest_state]
+    y = [point.y for point in nearest_state]
+    
+    
     plt.figure()
     plt.title('Time Deviation (seconds)')
     plt.set_cmap('RdYlGn_r')
-    plt.scatter(xs,ys,c=devi_time, label = "time savings")
+    plt.scatter(xs,ys,c = 'm',alpha = 0.3)
+    plt.scatter(x,y,c=devi_time, label = "time savings")
     plt.colorbar()
-    plt.savefig(os.path.join(outputPath,'Time_Deviation.png'), transparent = True, dpi = 300)
+    plt.savefig(os.path.join(outputPath,'Time_Deviation.png'), dpi = 300)
     
     plt.figure()
     plt.title('Weight Deviation (pounds)')
     plt.set_cmap('RdYlGn')
-    plt.scatter(xs,ys,c=devi_weight, label = "fuel savings")
+    plt.scatter(xs,ys,c = 'm',alpha = 0.3)
+    plt.scatter(x,y,c=devi_weight, label = "fuel savings")
     plt.colorbar()
-    plt.savefig(os.path.join(outputPath,'Fuel_Deviation.png'), transparent = True, dpi = 300)
+    plt.savefig(os.path.join(outputPath,'Fuel_Deviation.png'), dpi = 300)
     
     FuelAndTimeDeviations_frame = pd.DataFrame()
     
