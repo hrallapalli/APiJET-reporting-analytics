@@ -13,8 +13,10 @@ import HR_APIJET_TapAdvisoryParser as TAP
 
 # rootdir = r'C:\Users\Hari.rallapalli\Desktop\APIJET\loopingtest'
 # rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_run_20210315'
-
-rootdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210423_test'
+#rootdir = r'\\ijet-file-01.us.ijetonboard.com\Engineering\FedEx Trial DAT\Finished_Runs_20210427'
+# rootdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210423_test'
+# rootdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210603_test'
+rootdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210706_test\flights'
 rscriptdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\APIJET_flight_deviations_analysis.Rmd'
 rknitdir = r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\knit_analysis.R'
 
@@ -49,8 +51,13 @@ for flight_folder in os.listdir(rootdir):
         print('Incorrect formatting of input .csv filenames or unsuitable root directory')
     
     r2ta.AlignedTraj(pathToRoute, pathToTraj, out_dir_path)
+
     
     pathToAlignedTraj = os.path.join(out_dir_path,'ROUTEALIGNED_AopOwnshipTrajectoryDataRecord.csv')
+    
+    if not os.path.exists(pathToAlignedTraj):
+        continue
+    
     t2sd.RouteToStateDeviations(pathToState, pathToAlignedTraj,out_dir_path)
     
     FaT.FuelAndTimeDeviations(pathToState, pathToAlignedTraj,out_dir_path)

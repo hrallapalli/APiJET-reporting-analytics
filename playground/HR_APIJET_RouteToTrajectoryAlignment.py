@@ -85,6 +85,9 @@ def AlignedTraj(pathToRoute, pathToTraj, outputPath):
     Route_First_Traj_ind = Route_df["SimTime"] > Traj_First_Simtime
     Route_df = Route_df[Route_First_Traj_ind]
     
+    if len(Route_df) == 0:
+        return
+    
     #########
     # End of filtering
     #########

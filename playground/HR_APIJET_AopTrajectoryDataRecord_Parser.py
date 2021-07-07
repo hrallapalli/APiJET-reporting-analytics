@@ -39,4 +39,4 @@ def TrajParser(pathToFile):
     return(df)
 
 if __name__ == '__main__':
-    TrajDf = TrajParser(r'C:\Users\Hari.rallapalli\Desktop\APiJET\KCLKKMEM DAT\AopOwnshipTrajectoryDataRecord.csv')
+    TrajDf = TrajParser(r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210509_test\Flight_Run_7\Flight_Run_7_AopOwnshipTrajectoryDataRecord.csv')

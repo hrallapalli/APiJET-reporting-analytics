@@ -9,6 +9,9 @@ import pandas as pd
 import io
 import sys
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 def TapAdvisoryParser(pathToAdvisory, outputPath):
 
@@ -46,8 +49,15 @@ def TapAdvisoryParser(pathToAdvisory, outputPath):
     df.to_csv(os.path.join(outputPath,'SAVINGS_TapAdvisoryRefreshRecord.csv'))
     optimal_savings.to_csv(os.path.join(outputPath,'SAVINGS_OptimalSavings.csv'))
     
+    plt.figure()
+    plt.title('Trip Cost Savings (Dollars)\nLateral = red, Vertical = blue, Combo = green')
+    sns.lmplot(x='SimTime',y='TripCostOutcome', data=df, hue='AdvisoryType', fit_reg=False, scatter_kws={"s": 1})
+    plt.savefig(os.path.join(outputPath,'TripCostSavings.png'), dpi = 300)
+    plt.close('all')
+    
+
     return(df)
 
 if __name__ == '__main__':
 
-    TapAdvisoryFrame = TapAdvisoryParser(r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210423_test\Flight_Run_0\Flight_Run_0_TapAdvisoryRefreshDataRecord.csv', r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210423_test\Flight_Run_0\analysis_1619201197326')
+    TapAdvisoryFrame = TapAdvisoryParser(r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210603_test\Flight_Run_0\Flight_Run_0_TapAdvisoryRefreshDataRecord.csv', r'C:\Users\Hari.rallapalli\OneDrive - APiJET\Desktop\APIJET\20210608_test\Flight_Run_0\analysis_1619201197326')
