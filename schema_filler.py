@@ -78,6 +78,8 @@ WAYPOINT_2 = []
 FLIGHT_LEVEL = []
 RECONNECT_WAYPOINT = []
 
+
+
 for aid in ADVISORY_ID:
     ADVISORY_TYPE.append(SAVINGS_refresh_frame['AdvisoryType'][SAVINGS_refresh_frame['AdvisoryId']==aid].iloc[0])
     FUEL_SAVINGS.append(SAVINGS_refresh_frame['FuelOutcome'][SAVINGS_refresh_frame['AdvisoryId']==aid].iloc[0])
@@ -112,6 +114,7 @@ s = {'AIRLINE':AIRLINE,
      'DATETIME':DATETIME,
      'INITAL_CRUISE_ALTITUDE':INITAL_CRUISE_ALTITUDE,
      'ADVISORY_TYPE':ADVISORY_TYPE,
+     'SUGGESTION': DW_DISPLAY # WHAT DOES THE APP TELL THE PILOT?
      'ADVISORY_ID':ADVISORY_ID,
      'FUEL_SAVINGS':FUEL_SAVINGS,
      'TIME_SAVINGS':TIME_SAVINGS,
